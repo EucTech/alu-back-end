@@ -1,35 +1,56 @@
 #!/usr/bin/python3
 """
-   This is a python script that export data in the CSV format.
+    python script that exports data in the JSON format
 """
 import json
 import requests
-import sys
-
+from sys import argv
 
 if __name__ == "__main__":
-    api_url = "https://jsonplaceholder.typicode.com"
+    """
+        request user info by employee ID
+    """
+    request_employee = requests.get(
+        'https://jsonplaceholder.typicode.com/users/{}/'.format(argv[1]))
+    """
+        convert json to dictionary
+    """
+    user = json.loads(request_employee.text)
+    """
+        extract username
+    """
+    username = user.get("username")
 
-    employee_id = sys.argv[1]
+    """
+        request user's TODO list
+    """
+    request_todos = requests.get(
+        'https://jsonplaceholder.typicode.com/users/{}/todos'.format(argv[1]))
+    """
+        dictionary to store task status(completed) in boolean format
+    """
+    tasks = {}
+    """
+        convert json to list of dictionaries
+    """
+    user_todos = json.loads(request_todos.text)
+    """
+        loop through dictionary & get completed tasks
+    """
+    for dictionary in user_todos:
+        tasks.update({dictionary.get("title"): dictionary.get("completed")})
 
-    # get the user information
-    user_info = f"{api_url}/users/{employee_id}"
-    response = requests.get(user_info)
-    user_data = response.json()
+    task_list = []
+    for k, v in tasks.items():
+        task_list.append({
+            "task": k,
+            "completed": v,
+            "username": username
+        })
 
-    employee_name = user_data.get('name')
-    username = user_data.get('username')
-
-    # Retrieve task records
-    todo_data = f"{api_url}/todos?userId={employee_id}"
-    response = requests.get(todo_data)
-    todos = response.json()
-
-    info = {employee_id: [{"task": task['title'],
-                           "completed": task['completed'],
-                           "username": username} for task in todos]}
-
-    json_file = f"{employee_id}.json"
-
-    with open(json_file, mode='w') as file:
-        json.dump(info, file)
+    json_to_dump = {argv[1]: task_list}
+    """
+        export to JSON
+    """
+    with open('{}.json'.format(argv[1]), mode='w') as file:
+        json.dump(json_to_dump, file)
