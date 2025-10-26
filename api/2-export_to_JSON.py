@@ -1,56 +1,35 @@
 #!/usr/bin/python3
 """
-    python script that exports data in the JSON format
+   This is a python script that export data in the CSV format.
 """
 import json
 import requests
-from sys import argv
+import sys
+
 
 if __name__ == "__main__":
-    """
-        request user info by employee ID
-    """
-    request_employee = requests.get(
-        'https://jsonplaceholder.typicode.com/users/{}/'.format(argv[1]))
-    """
-        convert json to dictionary
-    """
-    user = json.loads(request_employee.text)
-    """
-        extract username
-    """
-    username = user.get("username")
+    api_url = "https://jsonplaceholder.typicode.com"
 
-    """
-        request user's TODO list
-    """
-    request_todos = requests.get(
-        'https://jsonplaceholder.typicode.com/users/{}/todos'.format(argv[1]))
-    """
-        dictionary to store task status(completed) in boolean format
-    """
-    tasks = {}
-    """
-        convert json to list of dictionaries
-    """
-    user_todos = json.loads(request_todos.text)
-    """
-        loop through dictionary & get completed tasks
-    """
-    for dictionary in user_todos:
-        tasks.update({dictionary.get("title"): dictionary.get("completed")})
+    employee_id = sys.argv[1]
 
-    task_list = []
-    for k, v in tasks.items():
-        task_list.append({
-            "task": k,
-            "completed": v,
-            "username": username
-        })
+    # get the user information
+    user_info = f"{api_url}/users/{employee_id}"
+    response = requests.get(user_info)
+    user_data = response.json()
 
-    json_to_dump = {argv[1]: task_list}
-    """
-        export to JSON
-    """
-    with open('{}.json'.format(argv[1]), mode='w') as file:
-        json.dump(json_to_dump, file)
+    employee_name = user_data.get('name')
+    username = user_data.get('username')
+
+    # Retrieve task records
+    todo_data = f"{api_url}/todos?userId={employee_id}"
+    response = requests.get(todo_data)
+    todos = response.json()
+
+    info = {employee_id: [{"task": task['title'],
+                           "completed": task['completed'],
+                           "username": username} for task in todos]}
+
+    json_file = f"{employee_id}.json"
+
+    with open(json_file, mode='w') as file:
+        json.dump(info, file)

@@ -1,27 +1,39 @@
 #!/usr/bin/python3
-""" Library to gather data from an API """
-
+"""
+   This is a python script that, using this REST API, for
+   a given employee ID, returns information about his/her TODO list
+   progress
+"""
 import requests
 import sys
 
-""" Function to gather data from an API """
 
 if __name__ == "__main__":
+    api_url = "https://jsonplaceholder.typicode.com"
+
     employee_id = sys.argv[1]
-    url = "https://jsonplaceholder.typicode.com/users/{}".format(employee_id)
 
-    todo = "https://jsonplaceholder.typicode.com/todos?userId={}"
-    todo = todo.format(employee_id)
+    # get user information
+    user_info = f"{api_url}/users/{employee_id}"
+    response = requests.get(user_info)
+    user_data = response.json()
 
-    user_info = requests.request("GET", url).json()
-    todo_info = requests.request("GET", todo).json()
+    employee_name = user_data.get('name')
 
-    employee_name = user_info.get("name")
-    total_tasks = list(filter(lambda x: (x["completed"] is True), todo_info))
-    task_com = len(total_tasks)
-    total_task_done = len(todo_info)
+    # Retrieve task records
+    todo_data = f"{api_url}/todos?userId={employee_id}"
+    response = requests.get(todo_data)
+    todos = response.json()
 
-    print("Employee {} is done with tasks({}/{}):".format(employee_name,
-          task_com, total_task_done))
+    complete_tasks = len(todos)
+    done_task = 0
 
-    [print("\t {}".format(task.get("title"))) for task in total_tasks]
+    for task in todos:
+        if task['completed']:
+            done_task += 1
+
+    print(f"Employee {employee_name} is done with tasks({done_task}/\
+{complete_tasks}):")
+    for tsk in todos:
+        if tsk['completed']:
+            print(f"\t {tsk['title']}")
